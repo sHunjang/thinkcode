@@ -28,3 +28,21 @@ FastAPI의 Depends()에 등록하면 요청마다 자동으로 DB 세션을
 프론트엔드(localhost:3000)에서 백엔드(localhost:8000)로
 요청할 때 이 문제가 생겨서 CORSMiddleware로 허용 도메인을
 명시적으로 설정했습니다.
+
+## Q. Supabase 연결 방식을 어떻게 선택했나요?
+Direct Connection과 Session pooler 두 가지 방식이 있는데,
+로컬 개발 환경이 IPv4라 IPv6 전용인 Direct connection 사용이 불가했습니다.
+Session Pooler(포트 6543)로 변경해서 해결했고, 추가로 Session pooler는 
+연결 수를 효율적으로 관리해줘서 무료 플랜에서도 안정적으로 운영할 수 있습니다.
+
+## Q. Next.js App Router를 선택한 이유가 뭔가요?
+Next.js 13부터 도입된 App Router는 Pages Router 대비
+서버 컴포넌트(RSC)를 기본으로 지원해서 클라이언트 번들 크기를 줄일 수 있습니다.
+또, 레이아웃 중첩, 스트리밍 SSR 등 최신 기능을 활용할 수 있어서 선택했습니다.
+
+## Q. 환경변수를 어떻게 관리했나요?
+백엔드의 경우 pydantic-settings의 BaseSettings로 중앙화했고,
+프론트엔드는 Next.js의 .env.local을 사용했습니다.
+NEXT_PUBLIC_ 접두사가 붙은 변수만 브라우저에 노출되고 나머지는
+서버에서만 접근 가능해서 API 키 같은 민감정보를 보호할 수 있습니다.
+두 파일 모두 .gitingore에 추가해서 Git에 올라가지 않도록 했습니다.
