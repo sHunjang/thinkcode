@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+// useState: 코드, 테스트 결과, 로딩 상태 관리
+// useEffect: 컴포넌트 마운트 시 문제 데이터 API 호출
+import { useState, useEffect } from "react";
 
 // useParams: URL의 동적 파라미터를 읽어오는 Hook
 // /problems/1 -> params.id = "1"
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+
+// 만들어둔 컴포넌트와 훅 임포트
 import CodeEditor from "@/app/components/CodeEditor";
 import { usePyodide } from "@/app/hooks/usePyodide";
 
@@ -23,6 +27,9 @@ type Problem = {
     concept_tag: string;
     test_cases: TestCase[];
     starter_code: string;
+    hint_1: string;
+    hint_2: string;
+    hint_3: string;
 };
 
 // 테스트 결과 타입
@@ -37,35 +44,39 @@ type TestResult = {
     }[];
 };
 
-// 임시 문제 데이터 - 나중에 API로 교체
-const MOCK_PROBLEM: Problem = {
-    id: "1",
-    title: "두 수의 합",
-    description: `두 정수 a, b를 입력받아 합을 출력하는 프로그램을 작성하세요.
-    입력: 두 정수 a, b (공백으로 구분)
-    출력: a + b의 값`,
-    level: "beginner",
-    concept_tag: "입출력, 변수",
-    test_cases: [
-        { input: "1 2", output: "3" },
-        { input: "10 20", output: "30" },
-        { input: "-1 1", output: "0" },
-    ],
-    starter_code: `# 두 수를 입력받아 합을 출력하세요
-a, b = map(int, input().split())
+// // 임시 문제 데이터 - 나중에 API로 교체
+// const MOCK_PROBLEM: Problem = {
+//     id: "1",
+//     title: "두 수의 합",
+//     description: `두 정수 a, b를 입력받아 합을 출력하는 프로그램을 작성하세요.
+//     입력: 두 정수 a, b (공백으로 구분)
+//     출력: a + b의 값`,
+//     level: "beginner",
+//     concept_tag: "입출력, 변수",
+//     test_cases: [
+//         { input: "1 2", output: "3" },
+//         { input: "10 20", output: "30" },
+//         { input: "-1 1", output: "0" },
+//     ],
+//     starter_code: `# 두 수를 입력받아 합을 출력하세요
+// a, b = map(int, input().split())
 
-# 여기에 코드를 작성하세요
-print(a+b)
-`,
-};
+// # 여기에 코드를 작성하세요
+// print(a+b)
+// `,
+// };
 
 export default function ProblemPage() {
     // URL 파라미터에서 문제 id 가져오기
     const params = useParams();
+    const router = useRouter();
     const problemId = params.id as string;
 
+    // 문제 데이터 상세
+    const [problem, setProblem] = useState<Problem | null>(null);
+
     // 현재 에디터 코드 상태
-    const [code, setCode] = useState(MOCK_PROBLEM.starter_code);
+    const [code, setCode] = useState("");
 
     // 테스트 실행 결과 상태
     const [testResult, setTestResult] = useState<TestResult | null>(null);
@@ -73,28 +84,113 @@ export default function ProblemPage() {
     // 테스트 실행 중 여부
     const [running, setRunning] = useState(false);
 
+    // 문제 로딩 상태
+    const [loading, setLoading] = useState(true);
+
+    // 현재 표시 중인 힌트 단계 (0: 힌트 없음, 1~3: 힌트 단계)
+    const [hintStep, setHintStep] = useState(0);
+
     // Pyodide 훅 - Python 실행 환경
     const { loading: pyodideLoading, error: pyodideError, runCode } = usePyodide();
 
+    // 컴포넌트 마운트 시 문제 데이터 API 호출
+    useEffect(() => {
+        const fetchProblem = async () => {
+            try {
+                setLoading(true);
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/problems/detail/${problemId}`);
+
+                if (!res.ok) throw new Error("문제를 불러오지 못했습니다.");
+
+                const data = await res.json();
+                setProblem(data);
+
+                // starter_code를 초기 코드로 설정
+                setCode(data.starter_code || "");
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProblem();
+    }, [problemId]);
+
     // 코드 실행 핸들러
     const handleRun = async () => {
+        if (!problem) return;
+
         setRunning(true);
         setTestResult(null);
 
-        const result = await runCode(code, MOCK_PROBLEM.test_cases);
+        const result = await runCode(code, problem.test_cases);
 
         setTestResult(result);
         setRunning(false);
     };
 
+    // 힌트 보기 핸들러
+    const handleHint = async () => {
+        if (hintStep < 3) setHintStep(hintStep + 1);
+    };
+
+    // 현재 힌트 내용
+    const getCurrentHint = () => {
+        if (!problem) return "";
+
+        const hints: Record<number, string> = {
+            1: problem.hint_1,
+            2: problem.hint_2,
+            3: problem.hint_3,
+        };
+        return hints[hintStep] || "";
+    };
+
+    // 로딩 화면
+    if (loading) {
+        return (
+            <main className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+                <p className="text-gray-400">문제를 불러오는 중...</p>
+            </main>
+        );
+    }
+
+    // 문제 없음
+    if (!problem) {
+        return (
+            <main className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+                <div className="text-center">
+                    <p className="text-gray-400 mb-4">문제를 찾을 수 없습니다.</p>
+                    <button
+                        onClick={() => router.push("/problems")}
+                        className="px-6 py-2 bg-indigo-600 text-white rounded-lg"
+                    >
+                        목록으로 돌아가기
+                    </button>
+                </div>
+            </main>
+        );
+    }
+
     return (
         <main className="min-h-screen bg-gray-900 text-white">
             {/* 상단 헤더 */}
             <header className="border-b border-gray-700 px-6 py-4 flex items-center justify-between">
-                <div>
-                    <span className="text-xs text-indigo-400 font-medium uppercase">{MOCK_PROBLEM.concept_tag}</span>
-                    <h1 className="text-lg font-bold mt-1">{MOCK_PROBLEM.title}</h1>
+                <div className="flex items-center gap-4">
+                    {/* 뒤로가기 */}
+                    <button
+                        onClick={() => router.push("/problems")}
+                        className="text-gray-400 hover:text-white transition-all"
+                    >
+                        ← 목록
+                    </button>
+                    <div>
+                        <span className="text-xs text-indigo-400 font-medium uppercase">{problem.concept_tag}</span>
+                        <h1 className="text-lg font-bold mt-1">{problem.title}</h1>
+                    </div>
                 </div>
+
                 {/* Pyodide 로딩 상태 */}
                 <div className="flex items-center gap-2">
                     {pyodideLoading ? (
@@ -112,19 +208,15 @@ export default function ProblemPage() {
                 {/* 왼쪽: 문제 설명 */}
                 <div className="w-1/2 border-r border-gray-700 p-6 overflow-y-auto">
                     {/* 난이도 뱃지 */}
-                    <span className="text-xs px-2 py-1 rounded-full bg-green-900 text-green-300">
-                        {MOCK_PROBLEM.level}
-                    </span>
+                    <span className="text-xs px-2 py-1 rounded-full bg-green-900 text-green-300">{problem.level}</span>
 
                     {/* 문제 설명 */}
-                    <div className="mt-4 text-gray-300 whitespace-pre-wrap leading-relaxed">
-                        {MOCK_PROBLEM.description}
-                    </div>
+                    <div className="mt-4 text-gray-300 whitespace-pre-wrap leading-relaxed">{problem.description}</div>
 
                     {/* 테스트 케이스 */}
                     <div className="mt-6">
                         <h3 className="text-sm font-bold text-gray-400 mb-3">예제 입출력</h3>
-                        {MOCK_PROBLEM.test_cases.map((tc, idx) => (
+                        {problem.test_cases.map((tc, idx) => (
                             <div
                                 key={idx}
                                 className="mb-3 bg-gray-800 rounded-lg p-4"
@@ -141,6 +233,33 @@ export default function ProblemPage() {
                                 </div>
                             </div>
                         ))}
+                    </div>
+
+                    {/* 힌트 섹션 */}
+                    <div className="mt-6">
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-sm font-bold text-gray-400">힌트</h3>
+                            <span className="text-xs text-gray-500">{hintStep}/3 사용</span>
+                        </div>
+
+                        {/* 현재 힌트 표시 */}
+                        {hintStep > 0 && (
+                            <div className="bg-yellow-900/30 border border-yellow-700 rounded-lg p-4 mb-3">
+                                <p className="text-xs text-yellow-400 mb-1">힌트 {hintStep}</p>
+                                <p className="text-sm text-yellow-200">{getCurrentHint()}</p>
+                            </div>
+                        )}
+
+                        {/* 힌트 보기 버튼 */}
+                        {hintStep < 3 && (
+                            <button
+                                onClick={handleHint}
+                                className="w-full py-2 rounded-lg border border-yellow-700
+                    text-yellow-400 text-sm hover:bg-yellow-900/30 transition-all"
+                            >
+                                {hintStep === 0 ? "힌트 보기" : "다음 힌트 보기"} 💡
+                            </button>
+                        )}
                     </div>
 
                     {/* 테스트 결과 */}

@@ -1,0 +1,73 @@
+# 문제 목록 조회 라우터
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import text
+
+from app.core.database import get_db
+
+router = APIRouter(prefix="/api/problems", tags=["problems"])
+
+
+# GET /api/problems/{level}
+# 수준별 문제 목록 조회
+@router.get("/{level}")
+async def get_problems(level: str, db: AsyncSession = Depends(get_db)):
+
+    # 유효한 수준인지 검증 - 딕셔너리로 O(1) 조회
+    valid_levels = {"beginner", "intermediate", "advanced"}
+
+    if level not in valid_levels:
+        raise HTTPException(
+            status_code=400,
+            detail="올바르지 않은 수준입니다. beginner/intermediate/advanced 중 하나를 선택하세요."
+        )
+
+
+    # 수준별 문제 목록 조회
+    # order_idx 기준으로 정렬해서 문제 순서 보장
+    result = await db.execute(
+        text("""
+            SELECT id, title, description, level, concept_tag, order_idx
+            FROM problems
+            WHERE level = :level
+            ORDER BY order_idx ASC
+        """),
+        {"level": level}
+    )
+
+
+    # 결과를 딕셔너리 리스트로 변환
+    # _mapping: SQLAlchemy Row를 딕셔너리처럼 접근할 수 있게 해줌
+    problems = [dict(row._mapping) for row in result.fetchall()]
+
+    return {
+        "level": level,
+        "count": len(problems),
+        "problems": problems
+    }
+
+
+# GET /api/problems/detail/{id}
+# 문제 상세 조회
+@router.get("/detail/{id}")
+async def get_problem(id: str, db: AsyncSession = Depends(get_db)):
+
+    result = await db.execute(
+        text("""
+            SELECT id, title, description, level, concept_tag,
+                    test_cases, starter_code, hint_1, hint_2, hint_3
+            FROM problems
+            WHERE id = :id
+        """),
+        {"id": id}
+    )
+
+    problem = result.fetchone()
+
+    if not problem:
+        raise HTTPException(
+            status_code=404,
+            detail="문제를 찾을 수 없습니다."
+        )
+    
+    return dict(problem._mapping)
