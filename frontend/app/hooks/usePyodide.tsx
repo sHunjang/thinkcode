@@ -122,10 +122,6 @@ _result = _stdout.getvalue().strip()
                 await pyodideRef.current.runPythonAsync(wrappedCode);
                 const output = pyodideRef.current.globals.get("_result") as string ?? "";
 
-                // 디버깅용
-                console.log("실행 결과 타입: ", typeof output);
-                console.log("실행 결과 값: ", output);
-
                 // 실행 결과 가져오기
                 const expected = testCase.output.trim();
                 const passed = output === expected;
