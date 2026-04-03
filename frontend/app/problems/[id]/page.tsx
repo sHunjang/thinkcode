@@ -12,6 +12,9 @@ import { useParams, useRouter } from "next/navigation";
 import CodeEditor from "@/app/components/CodeEditor";
 import { usePyodide } from "@/app/hooks/usePyodide";
 
+// GateModal 컴포넌트 추가
+import GateModal from "@/app/components/GateModal";
+
 // 테스트 케이스 타입
 type TestCase = {
     input: string;
@@ -96,6 +99,12 @@ export default function ProblemPage() {
     // AI 힌트 내용 저장
     const [aiHint, setAiHint] = useState<string | null>(null);
 
+    // 게이트 모달 표시 여부
+    const [gateOpen, setGateOpen] = useState(false);
+
+    // 게이트 통과 토큰 -> 최종 제출 시 사용
+    const [gateToken, setGateToken] = useState<string | null>(null);
+
     // Pyodide 훅 - Python 실행 환경
     const { loading: pyodideLoading, error: pyodideError, runCode } = usePyodide();
 
@@ -134,6 +143,11 @@ export default function ProblemPage() {
 
         setTestResult(result);
         setRunning(false);
+
+        // 모든 테스트 통과 시 게이트 모달 자동 실행
+        if (result.success) {
+            setGateOpen(true);
+        }
     };
 
     // 힌트 보기 핸들러
@@ -295,8 +309,8 @@ export default function ProblemPage() {
                                 {hintLoading
                                     ? "힌트 생성 중..."
                                     : hintStep === 0
-                                        ? "AI 힌트 받기 💡"
-                                        : "다음 힌트 받기 💡"}
+                                      ? "AI 힌트 받기 💡"
+                                      : "다음 힌트 받기 💡"}
                             </button>
                         )}
                     </div>
@@ -345,8 +359,30 @@ export default function ProblemPage() {
                     >
                         {running ? "실행 중..." : "▶ 코드 실행"}
                     </button>
+                    {/* 게이트 통과 후 제출 버튼 활성화 */}
+                    {gateToken && (
+                        <button
+                            className="mt-2 py-3 rounded-xl font-semibold transition-all bg-green-600 text-white hover:bg-green-700"
+                            onClick={() => alert("제출 완료! (6주차에 구현 예정)")}
+                        >
+                            ✅ 최종 제출하기
+                        </button>
+                    )}
                 </div>
             </div>
+
+            {/* 게이트 모달 */}
+            <GateModal
+                isOpen={gateOpen}
+                problemId={problem.id}
+                email="test@test.com"
+                onPass={(token) => {
+                    // 토큰 저장
+                    setGateToken(token);
+                    setGateOpen(false);
+                }}
+                onClose={() => setGateOpen(false)}
+            />
         </main>
     );
 }
