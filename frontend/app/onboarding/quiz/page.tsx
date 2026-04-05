@@ -193,7 +193,10 @@ function QuizContent() {
                     {/* 문제 */}
                     {/* whitespace-pre-wrap: 코드 줄바꿈 유지 */}
                     <p className="text-lg font-medium text-gray-900 mt-4 mb-6 whitespace-pre-wrap">
-                        {currentQuestion.question}
+                        {currentQuestion.question
+                            .replace(/```python/g, "")
+                            .replace(/```/g, "")
+                            .trim()}
                     </p>
 
                     {/* 보기 */}
