@@ -1,5 +1,7 @@
 "use client";
 
+import { Suspense } from "react";
+
 // useEffect: 컴포넌트 렌더링 후 API 호출에 사용
 // useState: 결과 데이터 상세 관리
 import { useEffect, useState } from "react";
@@ -26,7 +28,7 @@ const levelLabel: Record<string, string> = {
     advanced: "중급자",
 };
 
-export default function ResultPage() {
+function ResultContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
 
@@ -67,7 +69,7 @@ export default function ResultPage() {
                 const data = await res.json();
 
                 setResult(data);
-            } catch (err) {
+            } catch {
                 setError("결과를 불러오는 중 오류가 발생했습니다.");
             } finally {
                 setLoading(false);
@@ -75,7 +77,7 @@ export default function ResultPage() {
         };
 
         completeOnboarding();
-    }, []);
+    }, [level, answers, correctAnswers]);
 
     // 로딩 화면
     if (loading) {
@@ -115,7 +117,9 @@ export default function ResultPage() {
             <div className="w-full max-w-2xl">
                 {/* 점수 카드 */}
                 <div className="bg-white rounded-xl p-8 shadow-sm mb-6 text-center">
-                    <div className="text-5xl mb-4">{result!.ratio >= 80 ? "🎉" : result!.ratio >= 40 ? "👍" : "💪"}</div>
+                    <div className="text-5xl mb-4">
+                        {result!.ratio >= 80 ? "🎉" : result!.ratio >= 40 ? "👍" : "💪"}
+                    </div>
                     <h1 className="text-2xl font-bold text-gray-900 mb-2">진단 완료!</h1>
                     <p className="text-gray-600 mb-6">
                         5문항 중 <span className="font-bold text-indigo-600">{result!.score}개</span> 정답 (
@@ -152,9 +156,7 @@ export default function ResultPage() {
                                 className="flex items-center gap-3"
                             >
                                 {/* 순서 번호 */}
-                                <span
-                                    className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm font-bold flex-shrink-0"
-                                >
+                                <span className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm font-bold flex-shrink-0">
                                     {idx + 1}
                                 </span>
                                 <span className="text-gray-700">{item}</span>
@@ -173,5 +175,19 @@ export default function ResultPage() {
                 </button>
             </div>
         </main>
+    );
+}
+
+export default function ResultPage() {
+    return (
+        <Suspense
+            fallback={
+                <main className="min-h-screen bg-gray-50 flex items-center justify-center">
+                    <p className="text-gray-600">로딩 중...</p>
+                </main>
+            }
+        >
+            <ResultContent />
+        </Suspense>
     );
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import { Suspense } from "react";
+
 // useState: 컴포넌트 안에서 상태(데이터)를 관리하는 React Hook
 // 상태가 바뀌면 컴포넌트가 자동으로 다시 랜더링 됨
 // useEffect: 컴포넌트 랜더링 후 실행되는 Hook
@@ -23,7 +25,7 @@ type Question = {
     explanation: string;
 };
 
-export default function QuizPage() {
+function QuizContent() {
     // useSearchParams: URL 쿼리 파라미터를 읽어오는 Hook
     // /onboarding/quiz?level=beginner -> searchParams.get("level") = "beginner"
     const searchParams = useSearchParams();
@@ -260,5 +262,19 @@ export default function QuizPage() {
                 </div>
             </div>
         </main>
+    );
+}
+
+export default function QuizPage() {
+    return (
+        <Suspense
+            fallback={
+                <main className="min-h-screen bg-gray-50 flex items-center justify-center">
+                    <p className="text-gray-600">로딩 중...</p>
+                </main>
+            }
+        >
+            <QuizContent />
+        </Suspense>
     );
 }
