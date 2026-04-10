@@ -206,11 +206,11 @@ function QuizContent() {
                                 key={idx}
                                 onClick={() => handleAnswer(idx)}
                                 className={`w-full p-4 rounded-lg border-2 text-left transition-all
-                    ${
-                        currentAnswer === idx
-                            ? "border-indigo-500 bg-indigo-50 text-indigo-900"
-                            : "border-gray-200 bg-white hover:border-gray-300"
-                    }`}
+                                ${
+                                    currentAnswer === idx
+                                        ? "border-indigo-500 bg-indigo-50 text-indigo-900 font-medium"
+                                        : "border-gray-200 bg-white text-gray-800 hover:border-indigo-300 hover:bg-indigo-50"
+                                }`}
                             >
                                 {option}
                             </button>
