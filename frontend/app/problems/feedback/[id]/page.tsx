@@ -152,14 +152,10 @@ export default function FeedbackPage() {
                         <div>
                             {/* 문제 정보 */}
                             <div className="flex items-center gap-3 mb-3">
-                                <span
-                                    className="text-xs px-3 py-1 rounded-full bg-indigo-900 text-indigo-300"
-                                >
+                                <span className="text-xs px-3 py-1 rounded-full bg-indigo-900 text-indigo-300">
                                     {similarProblem.concept_tag}
                                 </span>
-                                <span
-                                    className="text-xs px-3 py-1 rounded-full bg-green-900 text-green-300"
-                                >
+                                <span className="text-xs px-3 py-1 rounded-full bg-green-900 text-green-300">
                                     {similarProblem.level}
                                 </span>
                             </div>
@@ -192,11 +188,16 @@ export default function FeedbackPage() {
 
                             {/* 도전하기 버튼 */}
                             <button
-                                onClick={() => {
-                                    // 유사 문제를 sessionStorage에 저장 후 에디터로 이동
-                                    sessionStorage.setItem("similarProblem", JSON.stringify(similarProblem));
-                                    router.push("/problems/similar");
-                                }}
+                                // 수정 전
+                                // onClick={() => {
+                                //     // 유사 문제를 sessionStorage에 저장 후 에디터로 이동
+                                //     sessionStorage.setItem("similarProblem", JSON.stringify(similarProblem));
+                                //     router.push("/problems/similar");
+                                // }}
+                                // 수정 후 - sessionStorage에 저장하고 에디터 페이지에서 불러오는 방식 대신
+                                // 피드백 페이지에서 직접 유사 문제를 보여주는 방식으로 변경
+                                // 일단 버튼 클릭 시 문제 목록으로 이동
+                                onClick={() => router.push("/problems")}
                                 className="w-full py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-all"
                             >
                                 이 문제 도전하기 →

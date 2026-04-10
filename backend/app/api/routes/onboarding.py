@@ -136,13 +136,19 @@ Never include any text outside the JSON structure.""",
     # print("=== 전처리 후 ===")
     response_text = response_text.strip()
 
-    if response_text.startswith("```json"):
-        response_text = response_text[7:]   # ```json 제거 (7글자)
-    if response_text.startswith("```"):
-        response_text = response_text[3:]   # ``` 제거 (3글자)
-    if response_text.endswith("```"):
-        response_text = response_text[:-3]  # 끝의 ``` 제거
-    
+    # if response_text.startswith("```json"):
+    #     response_text = response_text[7:]   # ```json 제거 (7글자)
+    # if response_text.startswith("```"):
+    #     response_text = response_text[3:]   # ``` 제거 (3글자)
+    # if response_text.endswith("```"):
+    #     response_text = response_text[:-3]  # 끝의 ``` 제거
+
+    # 여러 형태의 코드 블록 마커 제거
+    # re.sub으로 더 강력하게 처리 - 줄바꿈 포함 다양한 형태 대응
+    import re
+    response_text = re.sub(r'```json\s*', '', response_text)
+    response_text = re.sub(r'```\s*', '', response_text)
+
     response_text = response_text.strip()
 
     # print(repr(response_text))    # 전처리 후
