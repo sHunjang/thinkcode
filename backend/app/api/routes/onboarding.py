@@ -77,6 +77,7 @@ Never include any text outside the JSON structure.""",
             {
                 "role": "user",
                 "content": f"""Generate a diagnostic quiz to evaluate the learner's actual understanding.
+
 [Learner Information]
 - Level: {request.level}
 - Description: {level_desc}
@@ -90,6 +91,19 @@ Never include any text outside the JSON structure.""",
 6. Wrong answers must be based on common misconceptions
 7. There must be exactly one correct answer
 8. Questions must include sufficient information to avoid ambiguity
+
+[Diversity Rules - IMPORTANT]
+9. Every quiz must be UNIQUE and DIFFERENT from previous quizzes
+10. Randomly select from these concept areas and vary each time:
+    - Variables, data types, type conversion
+    - Conditional statements, logical operators
+    - Loops, range(), iteration
+    - Functions, parameters, return values
+    - Lists, dictionaries, sets, tuples
+    - String manipulation, slicing
+    - Error handling, exceptions
+11. Use different code scenarios each time (avoid reusing same variable names or patterns)
+12. Randomize difficulty order within the 5 questions
 
 [Difficulty Guidelines]
 - Must require at least one level of thinking (code reasoning, etc.)
