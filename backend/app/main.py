@@ -39,7 +39,7 @@ app = FastAPI(
 origins = [
     "http://localhost:3000",    # Next.js 개발 서버
     "http://127.0.0.1:3000",
-    "https://thinkcode-blush.vercel.app",
+    "https://provgate-blush.vercel.app",
 ]
 
 # 미들웨어 등록
