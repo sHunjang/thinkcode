@@ -9,6 +9,10 @@ import { useState } from "react";
 // 버튼 클릭 후 데이터를 가지고 이동해야 하기 때문
 import { useRouter } from "next/navigation";
 
+// useAuth: 현재 로그인한 유저 정보를 가져오는 커스텀 훅
+// user가 null이면 비로그인 상태
+import { useAuth } from "./hooks/useAuth";
+
 // 수준 타입 정의 - TypeScript의 유니온 타입
 // 이 3가지 문자열만 허용, 오타 방지
 type level = "beginner" | "intermediate" | "advanced";
@@ -48,11 +52,21 @@ export default function Home() {
     // Next.js 라우터 인스턴스
     const router = useRouter();
 
+    // 현재 로그인한 유저 정보
+    // user가 null이면 비로그인 상태
+    const { user } = useAuth();
+
     // 다음 단계로 이동하는 함수
     // 선택한 수준을 URL 쿼리 파라미터로 전달
     // ex: /onboarding/quiz?level=beginner
     const handleNext = () => {
         if (!selectedLevel) return;
+
+        // 비로그인 상태면 로그인 페이지로 이동
+        if (!user) {
+            router.push("/auth/login");
+            return;
+        }
 
         router.push(`/onboarding/quiz?level=${selectedLevel}`);
     };
@@ -62,9 +76,7 @@ export default function Home() {
             {/* 헤더 */}
             <div className="text-center mb-12">
                 <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">ProvGate</h1>
-                <p className="text-lg text-gray-600 dark:text-gray-400">
-                    AI와 함께, 이해는 스스로
-                </p>
+                <p className="text-lg text-gray-600 dark:text-gray-400">AI와 함께, 이해는 스스로</p>
             </div>
 
             {/* 수준 선택 섹션 */}
@@ -90,23 +102,31 @@ export default function Home() {
                             <div className="text-4xl mb-3">{level.icon}</div>
                             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{level.title}</h3>
                             {/* whitespace-pre-line: \n을 줄바꿈으로 표시 */}
-                            <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-line">{level.description}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-line">
+                                {level.description}
+                            </p>
                         </button>
                     ))}
                 </div>
+
+                {/* 비로그인 안내 메시지 */}
+                {!user && selectedLevel && (
+                    <p className="text-center text-sm text-red-500 mb-3">🔐 진단을 시작하려면 로그인이 필요해요</p>
+                )}
 
                 {/* 다음 버튼 - 수준 선택 전에는 비활성화 */}
                 <button
                     onClick={handleNext}
                     disabled={!selectedLevel}
                     className={`w-full py-4 rounded-xl font-semibold text-lg transition-all
-            ${
-                selectedLevel
-                    ? "bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer"
-                    : "bg-gray-200 text-gray-400 cursor-not-allowed"
-            }`}
+                        ${
+                            selectedLevel
+                                ? "bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer"
+                                : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                        }`}
                 >
-                    진단 퀴즈 시작하기 →
+                    {/* 비로그인 시 버튼 텍스트 변경 */}
+                    {!user && selectedLevel ? "로그인 후 시작하기 🔐" : "진단 퀴즈 시작하기 →"}
                 </button>
             </div>
         </main>
