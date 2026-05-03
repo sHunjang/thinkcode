@@ -78,9 +78,10 @@ Never reveal the answer or show complete code directly.
 Format responses with emoji headers for readability.
 Always respond in Korean. Keep responses concise and structured.""",
         messages=[
-            {
-                "role": "user",
-                "content": f"""Provide a hint for the following problem.
+    {
+        "role": "user",
+        "content": f"""Provide a hint for the following problem.
+
 [Problem Information]
 Title: {problem_data['title']}
 Description: {problem_data['description']}
@@ -90,23 +91,36 @@ Concept: {problem_data['concept_tag']}
 ```python
 {request.current_code}
 ```
+
 [Hint Step]
 Step {request.hint_step}: {hint_level_desc[request.hint_step]}
 
 Format your response EXACTLY like this:
+
+🔍 **코드 분석**
+Line {{line_number}}: {{what is wrong or missing}}
+(If code is empty, write "아직 코드를 작성하지 않으셨네요!")
+
 💡 **핵심 포인트**
 (1-2 sentences pointing out what to focus on)
 
-🔍 **확인해보세요**
-(1 specific question to guide thinking)
+🤔 **생각해보세요**
+(1 specific Socratic question to guide thinking)
 
-Never reveal the answer directly.
-Keep response under 100 words in Korean."""
-            }
-        ]
+Rules:
+- Never reveal the answer or show complete code
+- Keep response concise and under 150 words in Korean
+- Line numbers must match the actual code lines
+- If no specific line issue, skip the Line part"""
+    }
+]
     )
 
-    hint_text = message.content[0].text
+    hint_text = next(
+        (block.text for block in message.content
+        if isinstance(block, anthropic.types.TextBlock)),
+        ""
+    )
 
     # 힌트 사용 횟수 DB 기록
     # submissions 테이블에 hint_count 업데이트

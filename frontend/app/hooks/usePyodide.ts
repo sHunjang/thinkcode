@@ -35,7 +35,6 @@ export function usePyodide() {
     // 에러 상태
     const [error, setError] = useState<string | null>(null);
 
-
     useEffect(() => {
         const loadPyodide = async () => {
             try {
@@ -52,7 +51,6 @@ export function usePyodide() {
                     script.src = "https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js";
 
                     document.head.appendChild(script);
-
 
                     // 스크립트 로드 완료까지 대기
                     await new Promise<void>((resolve, reject) => {
@@ -80,10 +78,7 @@ export function usePyodide() {
 
     // Python 코드 실행 함수
     // Test Case를 코드와 함께 실행되고 결과 반환
-    const runCode = async (
-        code: string,
-        testCases: { input: string, output: string }[]
-    ) => {
+    const runCode = async (code: string, testCases: { input: string; output: string }[]) => {
         if (!pyodideRef.current) {
             return { success: false, message: "Python 환경이 준비되지 않았습니다." };
         }
@@ -120,7 +115,7 @@ _result = _stdout.getvalue().strip()
 
                 // 반환값 대신 전역변수로 겨로가 저장 방식으로 변경
                 await pyodideRef.current.runPythonAsync(wrappedCode);
-                const output = pyodideRef.current.globals.get("_result") as string ?? "";
+                const output = (pyodideRef.current.globals.get("_result") as string) ?? "";
 
                 // 실행 결과 가져오기
                 const expected = testCase.output.trim();
@@ -134,9 +129,17 @@ _result = _stdout.getvalue().strip()
                 });
             } catch (err) {
                 // 런타임 에러 (문법 오류, 예외 등)
+                // 에러 메세지를 output으로 보여줘서 사용자가 무엇이 잘못됐는지 알 수 있게 함
+                const errorMessage =
+                    String(err)
+                        .replace("PythonError: Traceback (most recent call last):", "")
+                        .trim()
+                        .split("\n")
+                        .pop() || String(err);
+
                 results.push({
                     passed: false,
-                    output: "",
+                    output: `❌ ${errorMessage}`,
                     expected: testCase.output,
                     message: `에러: ${err}`,
                 });
@@ -148,7 +151,9 @@ _result = _stdout.getvalue().strip()
         return {
             success: allPassed,
             results,
-            message: allPassed ? "모든 테스트 통과! 🎉" : `${results.filter((r) => r.passed).length}/${results.length} 통과`,
+            message: allPassed
+                ? "모든 테스트 통과! 🎉"
+                : `${results.filter((r) => r.passed).length}/${results.length} 통과`,
         };
     };
 
