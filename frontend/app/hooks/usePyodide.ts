@@ -88,48 +88,57 @@ export function usePyodide() {
 
         for (const testCase of testCases) {
             try {
-                const wrappedCode = `import sys
-from io import StringIO
+                // test_cases의 input을 JSON 배열로 파싱
+                // 예: "[1, 2]" -> [1, 2] / '["hello", 3]' -> ["hello", 3]
+                let parsedInput: unknown[];
+                try {
+                    parsedInput = JSON.parse(testCase.input);
+                } catch {
+                    // JSON 파싱 실패 시 문자열 하나짜리 배열로 처리
+                    parsedInput = [testCase.input];
+                }
 
-# 표준 출력을 캡처하기 위해 StringIO로 교체
-_stdout = StringIO()
-sys.stdout = _stdout
+                // 기대 출력값도 JSON 파싱 시도
+                // 예: "3" -> 3 / '"hello"' -> "hello" / "[1,2]" -> [1,2]
+                let parsedExpected: unknown;
+                try {
+                    parsedExpected = JSON.parse(testCase.output);
+                } catch {
+                    parsedExpected = testCase.output.trim();
+                }
 
-# input() 함수를 mock해서 테스트 입력값 주입
-_input_values = ${JSON.stringify(testCase.input.split("\\n"))}
-_input_idx = 0
+                // solution() 함수 정의 + 호출 + 결과 저장
+                // _args로 인자 전달, _result에 반환값 저장
+                const wrappedCode = `
+import json
 
-def input(prompt=""):
-    global _input_idx
-    val = _input_values[_input_idx]
-    _input_idx += 1
-    return val
+# 테스트 인자 - JSON으로 직렬화해서 Python으로 전달
+_args = json.loads(${JSON.stringify(JSON.stringify(parsedInput))})
 
-# 사용자 코드 실행
+# 사용자가 작성한 solution() 함수 정의
 ${code}
 
-# 출력 결과 캡처
-sys.stdout = sys.__stdout__
-_result = _stdout.getvalue().strip()
-                `;
+# solution() 호출 후 결과 저장
+_result = solution(*_args)
+`;
 
-                // 반환값 대신 전역변수로 겨로가 저장 방식으로 변경
                 await pyodideRef.current.runPythonAsync(wrappedCode);
-                const output = (pyodideRef.current.globals.get("_result") as string) ?? "";
+                const rawOutput = pyodideRef.current.globals.get("_result");
 
-                // 실행 결과 가져오기
-                const expected = testCase.output.trim();
-                const passed = output === expected;
+                // Python 결과값을 JS로 변환 후 JSON 직렬화해서 비교
+                // 예: Python list [1,2] -> JS Array -> "[1,2]"
+                const outputStr = JSON.stringify(rawOutput);
+                const expectedStr = JSON.stringify(parsedExpected);
+
+                const passed = outputStr === expectedStr;
 
                 results.push({
                     passed,
-                    output,
-                    expected,
-                    message: passed ? "통과" : `실패: 예상 ${expected}, 실제 ${output}`,
+                    output: outputStr,
+                    expected: expectedStr,
+                    message: passed ? "통과" : `실패: 예상 ${expectedStr}, 실제 ${outputStr}`,
                 });
             } catch (err) {
-                // 런타임 에러 (문법 오류, 예외 등)
-                // 에러 메세지를 output으로 보여줘서 사용자가 무엇이 잘못됐는지 알 수 있게 함
                 const errorMessage =
                     String(err)
                         .replace("PythonError: Traceback (most recent call last):", "")
@@ -146,7 +155,6 @@ _result = _stdout.getvalue().strip()
             }
         }
 
-        // 전체 테스트 결과 요약
         const allPassed = results.every((r) => r.passed);
         return {
             success: allPassed,

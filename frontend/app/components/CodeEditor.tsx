@@ -53,6 +53,8 @@ export default function CodeEditor({ value, onChange, height = "400px", readOnly
                     bracketMatching: true,
                     // 코드 접기
                     foldGutter: true,
+                    // 탭 사이즈 4칸으로 설정 (Python 표준)
+                    tabSize: 4,
                 }}
             />
         </div>
