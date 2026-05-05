@@ -4,10 +4,10 @@
 # SQLAlchemy 2.0의 비동기 엔진과 세션을 가져옴
 # 비동기(async)를 쓰는 이유: DB 쿼리를 기다리는 동안 다른 요청을 처리할 수 있어서 사용
 # 예) 100명이 동시에 접속해도 한 명씩 순서대로 처리하지 않아도 됨
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 
 # sessionmaker: 세션(DB 연결 단위)을 찍어내는 공장 역할
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
+from sqlalchemy.orm import DeclarativeBase
 
 # settings(core/config.py)에서 DATABASE_URL을 가져옴
 from app.core.config import settings
@@ -26,7 +26,7 @@ engine = create_async_engine(
 # autocommit=False : 명시적으로 commit() 호출해야 DB에 반영됨 (실수 방지)
 # autoflush=False : 명시적으로 flush() 호출해야 쿼리가 실행됨
 # bind=engine : 위에서 만든 engine에 연결
-AsyncSessionLocal = sessionmaker(
+AsyncSessionLocal = async_sessionmaker(
     bind=engine,
     class_=AsyncSession,
     autocommit=False,

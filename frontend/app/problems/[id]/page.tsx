@@ -372,7 +372,7 @@ export default function ProblemPage() {
                                     <div className="bg-gray-800 divide-y divide-gray-700">
                                         <div className="flex text-xs">
                                             <div className="w-24 px-3 py-2 text-gray-500 bg-gray-900 font-medium">
-                                                예상 출력
+                                                기대 출력
                                             </div>
                                             <div className="flex-1 px-3 py-2 text-blue-300 font-mono">{r.expected}</div>
                                         </div>

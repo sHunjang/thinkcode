@@ -136,7 +136,7 @@ _result = solution(*_args)
                     passed,
                     output: outputStr,
                     expected: expectedStr,
-                    message: passed ? "통과" : `실패: 예상 ${expectedStr}, 실제 ${outputStr}`,
+                    message: passed ? "통과" : `실패: 기대 ${expectedStr}, 실제 ${outputStr}`,
                 });
             } catch (err) {
                 const errorMessage =

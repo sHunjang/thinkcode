@@ -114,7 +114,7 @@ async def get_problem(id: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         text("""
             SELECT id, title, description, level, concept_tag,
-                    test_cases, starter_code, hint_1, hint_2, hint_3
+                    test_cases, starter_code
             FROM problems
             WHERE id = :id
         """),
