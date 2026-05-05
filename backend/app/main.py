@@ -38,11 +38,13 @@ app = FastAPI(
 )
 
 # CORS 허용 도메인 목록
-# 개발 중에는 localhost만 허용, 배포 후에는 실제 도메인 추가
+# 개발 중에는 localhost만 허용, 배포 후에는 실제 도메인 추가 (Frontend URL만 있으면 됨)
 origins = [
     "http://localhost:3000",    # Next.js 개발 서버
     "http://127.0.0.1:3000",
     "https://provgate-blush.vercel.app",
+    "https://provgate-git-main-seunghunj922-9637s-projects.vercel.app",
+    "https://provgate-jmvjnbi4a-seunghunj922-9637s-projects.vercel.app",
 ]
 
 # 미들웨어 등록
