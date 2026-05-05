@@ -21,3 +21,6 @@ node_modules/
 # docs/
 /docs/*.md*.swp
 *.swp
+
+# Problem YAML files (managed locally)
+backend/problems/
