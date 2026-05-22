@@ -183,9 +183,19 @@ async def get_stats(
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    # JWT 토큰에서 추출한 유저 정보 사용
-    # email을 URL로 받지 않아서 다른 유저 정보 조회 불가
-    user_id = current_user["user_id"]
+    # JWT에서 추출한 email로 우리 users 테이블의 id 조회
+    # JWT의 user_id(auth.users.id)와 우리 users.id가 다르기 때문
+    user_result = await db.execute(
+        text("SELECT id FROM users WHERE email = :email"),
+        {"email": current_user["email"]}
+    )
+    user = user_result.fetchone()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+
+    user_id = user._mapping["id"]
+
 
     # 통계 조회 쿼리 (기존과 동일)
     stats_result = await db.execute(
