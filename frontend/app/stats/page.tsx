@@ -10,6 +10,9 @@ import { useRouter } from "next/navigation";
 // useAuth: 현재 로그인한 유저 정보
 import { useAuth } from "@/app/hooks/useAuth";
 
+// Supabase 세션에서 JWT Access Token을 발급 받기 위한 호출
+import { createClient } from "@/app/lib/supabase";
+
 // 통계 타입 정의
 type Stats = {
     total_completed: number;
@@ -78,6 +81,15 @@ export default function StatsPage() {
         }
     }, [authLoading, user, router]);
 
+// router를 의존성 배열에 넣는 이유?
+// useEffect 안에서 router를 사용하고 있는데
+// 의존성 배열에 없으면?
+// React 입장에서:
+// "router가 바뀔 수도 있는데
+//  내가 그걸 감지를 못하잖아!"
+//          ↓
+//       경고 발생
+
     // 통계 데이터 조회
     useEffect(() => {
         if (!user?.email) return;
@@ -85,10 +97,29 @@ export default function StatsPage() {
         const fetchStats = async () => {
             try {
                 setLoading(true);
-                const res = await fetch(
-                    `${process.env.NEXT_PUBLIC_API_URL}/api/stats/${encodeURIComponent(user.email!)}`,
-                );
+
+                // Supabase 세션에서 JWT Access Token 가져오기
+                const supabase = createClient();
+                const {
+                    data: { session },
+                } = await supabase.auth.getSession();
+                const token = session?.access_token;
+
+                // 토큰이 없으면 로그인 페이지로 이동
+                if (!token) {
+                    router.push("/auth/login");
+                    return;
+                }
+
+                // JWT 토큰을 Authorization 헤더에 포함해서 요청
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/stats`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+
                 if (!res.ok) throw new Error("통계 조회 실패");
+
                 const data = await res.json();
                 setStats(data);
             } catch (err) {
@@ -99,7 +130,7 @@ export default function StatsPage() {
         };
 
         fetchStats();
-    }, [user?.email]);
+    }, [authLoading, user, router]);
 
     // 로딩 화면
     if (authLoading || loading) {

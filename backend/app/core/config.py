@@ -20,8 +20,17 @@ class Settings(BaseSettings):
     # 여기서는 타입과 기본값(없음)만 선언해두는 것
     DATABASE_URL: str = ""
 
+    # Supabase ProvGate URL - JWT 검증에 사용
+    SUPABASE_URL: str = ""
+
     # Claude API 키 - 힌트/게이트 문제 생성에 사용
     ANTHROPIC_API_KEY: str = ""
+
+    # Supabase anon key - JWKS 엔드포인트 접근 시 필요
+    SUPABASE_ANON_KEY: str = ""
+
+    # Supabase JWT Secret - 토큰 직접 검증용
+    SUPABASE_JWT_SECRET: str = ""
 
     # DATABASE_URL 검증
     # 서버 시작 시 빈 값이면 즉시 에러 발생
@@ -45,6 +54,26 @@ class Settings(BaseSettings):
                 ".env 파일을 확인해주세요."
             )
         
+        return v
+
+    # SUPABASE_URL 검증
+    @field_validator("SUPABASE_URL", mode="before")
+    def validate_supabase_url(cls, v):
+        if not v:
+            raise ValueError(
+                "SUPABASE_URL이 설정되지 않았습니다. "
+                ".env 파일을 확인해주세요."
+            )
+        return v
+
+    # Supabase JWKS 엔드포인트 접근 시 필요한 API 키 검증
+    @field_validator("SUPABASE_ANON_KEY", mode="before")
+    def validation_supabase_anon_key(cls, v):
+        if not v:
+            raise ValueError(
+                "SUPABASE_ANON_KEY가 설정되지 않았습니다. "
+                ".env 파일을 확인하세요."
+            )
         return v
 
     class Config:
