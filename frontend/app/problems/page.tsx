@@ -168,15 +168,15 @@ export default function ProblemPage() {
                                         key={problem.id}
                                         onClick={() => router.push(`/problems/${problem.id}`)}
                                         className={`bg-white dark:bg-gray-800 rounded-xl p-6 cursor-pointer
-                hover:bg-gray-50 dark:hover:bg-gray-700 transition-all
-                border hover:border-indigo-500
-                ${
-                    isCompleted
-                        ? "border-green-400 dark:border-green-600"
-                        : isInProgress
-                          ? "border-yellow-400 dark:border-yellow-600"
-                          : "border-gray-200 dark:border-gray-700"
-                }`}
+                                            hover:bg-gray-50 dark:hover:bg-gray-700 transition-all
+                                            border hover:border-indigo-500
+                                            ${
+                                                isCompleted
+                                                    ? "border-green-400 dark:border-green-600"
+                                                    : isInProgress
+                                                      ? "border-yellow-400 dark:border-yellow-600"
+                                                      : "border-gray-200 dark:border-gray-700"
+                                            }`}
                                     >
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-4">
@@ -190,9 +190,23 @@ export default function ProblemPage() {
                                                         #{String(idx + 1).padStart(2, "0")}
                                                     </span>
                                                 )}
-                                                <h2 className="font-semibold text-gray-900 dark:text-white">
-                                                    {problem.title}
-                                                </h2>
+                                                <div>
+                                                    {/* 문제 제목 */}
+                                                    <h2 className="font-semibold text-gray-900 dark:text-white">
+                                                        {problem.title}
+                                                    </h2>
+                                                    {/* 난이도 + 개념 태그 */}
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        <span
+                                                            className={`text-xs px-2 py-0.5 rounded-full font-medium ${levelStyle[problem.level]}`}
+                                                        >
+                                                            {levelLabel[problem.level]}
+                                                        </span>
+                                                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                                                            {problem.concept_tag}
+                                                        </span>
+                                                    </div>
+                                                </div>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 {/* 상태 뱃지 */}
@@ -206,18 +220,8 @@ export default function ProblemPage() {
                                                         진행 중
                                                     </span>
                                                 )}
-                                                {/* 난이도 뱃지 */}
-                                                <span
-                                                    className={`text-xs px-3 py-1 rounded-full font-medium
-                        ${levelStyle[problem.level]}`}
-                                                >
-                                                    {problem.concept_tag}
-                                                </span>
                                             </div>
                                         </div>
-                                        <p className="text-gray-500 dark:text-gray-400 text-sm mt-3 line-clamp-2">
-                                            {problem.description}
-                                        </p>
                                     </div>
                                 );
                             })

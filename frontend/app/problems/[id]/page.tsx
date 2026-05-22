@@ -56,28 +56,6 @@ type TestResult = {
     }[];
 };
 
-// // 임시 문제 데이터 - 나중에 API로 교체
-// const MOCK_PROBLEM: Problem = {
-//     id: "1",
-//     title: "두 수의 합",
-//     description: `두 정수 a, b를 입력받아 합을 출력하는 프로그램을 작성하세요.
-//     입력: 두 정수 a, b (공백으로 구분)
-//     출력: a + b의 값`,
-//     level: "beginner",
-//     concept_tag: "입출력, 변수",
-//     test_cases: [
-//         { input: "1 2", output: "3" },
-//         { input: "10 20", output: "30" },
-//         { input: "-1 1", output: "0" },
-//     ],
-//     starter_code: `# 두 수를 입력받아 합을 출력하세요
-// a, b = map(int, input().split())
-
-// # 여기에 코드를 작성하세요
-// print(a+b)
-// `,
-// };
-
 export default function ProblemPage() {
     // URL 파라미터에서 문제 id 가져오기
     const params = useParams();
@@ -215,17 +193,23 @@ export default function ProblemPage() {
         }
     };
 
-    // // 현재 힌트 내용
-    // const getCurrentHint = () => {
-    //     if (!problem) return "";
-
-    //     const hints: Record<number, string> = {
-    //         1: problem.hint_1,
-    //         2: problem.hint_2,
-    //         3: problem.hint_3,
-    //     };
-    //     return hints[hintStep] || "";
-    // };
+    // 입력값 파싱 함수 - 바깥 배열 벗겨서 보여주기
+    // [[1, 2]] → [1, 2] / [["hello"]] → "hello" / [[1, 2], [3, 4]] → [1, 2], [3, 4]
+    const parseDisplayInput = (input: string): string => {
+        try {
+            const parsed = JSON.parse(input);
+            if (Array.isArray(parsed) && parsed.length === 1) {
+                // 인자가 1개면 바깥 배열 제거
+                return JSON.stringify(parsed[0]);
+            } else if (Array.isArray(parsed)) {
+                // 인자가 여러개면 각각 보여주기
+                return parsed.map((p) => JSON.stringify(p)).join(", ");
+            }
+        } catch {
+            return input;
+        }
+        return input;
+    };
 
     // 로딩 화면
     if (loading) {
@@ -309,9 +293,9 @@ export default function ProblemPage() {
                                 router.push("/auth/login");
                             }}
                             className="flex items-center gap-1 px-3 py-1.5 rounded-full
-                    text-xs font-medium transition-all border
-                    bg-gray-800 border-gray-600 text-gray-300
-                    hover:bg-gray-700"
+                                text-xs font-medium transition-all border
+                                bg-gray-800 border-gray-600 text-gray-300
+                                hover:bg-gray-700"
                         >
                             로그아웃
                         </button>
@@ -326,7 +310,27 @@ export default function ProblemPage() {
                 {/* 왼쪽: 문제 설명 */}
                 <div className="w-1/2 border-r border-gray-700 p-6 overflow-y-auto">
                     {/* 난이도 뱃지 */}
-                    <span className="text-xs px-2 py-1 rounded-full bg-green-900 text-green-300">{problem.level}</span>
+                    <div className="flex items-center gap-2">
+                        <span
+                            className={`text-xs px-2 py-1 rounded-full font-medium
+        ${
+            problem.level === "beginner"
+                ? "bg-green-900 text-green-300"
+                : problem.level === "intermediate"
+                  ? "bg-yellow-900 text-yellow-300"
+                  : "bg-blue-900 text-blue-300"
+        }`}
+                        >
+                            {problem.level === "beginner"
+                                ? "입문자"
+                                : problem.level === "intermediate"
+                                  ? "초급자"
+                                  : "중급자"}
+                        </span>
+                        <span className="text-xs px-2 py-1 rounded-full bg-gray-700 text-gray-300">
+                            {problem.concept_tag}
+                        </span>
+                    </div>
 
                     {/* 문제 설명 */}
                     <div className="mt-4 text-gray-300 whitespace-pre-wrap leading-relaxed">{problem.description}</div>
@@ -342,7 +346,8 @@ export default function ProblemPage() {
                                 <div className="flex gap-4">
                                     <div className="flex-1">
                                         <p className="text-xs text-gray-500 mb-1">입력</p>
-                                        <code className="text-sm text-green-300">{tc.input}</code>
+                                        {/* parseDisplayInput: 바깥 배열 제거해서 자연스럽게 표시 */}
+                                        <code className="text-sm text-green-300">{parseDisplayInput(tc.input)}</code>
                                     </div>
                                     <div className="flex-1">
                                         <p className="text-xs text-gray-500 mb-1">출력</p>
@@ -363,8 +368,13 @@ export default function ProblemPage() {
                         {/* AI 힌트 표시 */}
                         {aiHint && (
                             <div className="bg-yellow-900/30 border border-yellow-700 rounded-lg p-4 mb-3">
-                                <p className="text-xs text-yellow-400 mb-1">💡 힌트 {hintStep}</p>
-                                <p className="text-sm text-yellow-200">{aiHint}</p>
+                                <p className="text-xs text-yellow-400 mb-2">💡 힌트 {hintStep}</p>
+                                {/* 줄바꿈 처리: \n을 기준으로 분리해서 각각 렌더링 */}
+                                <div className="text-sm text-yellow-200 space-y-2">
+                                    {aiHint
+                                        .split("\n")
+                                        .map((line, idx) => (line.trim() ? <p key={idx}>{line}</p> : null))}
+                                </div>
                             </div>
                         )}
 
@@ -373,7 +383,9 @@ export default function ProblemPage() {
                             <button
                                 onClick={handleHint}
                                 disabled={hintLoading}
-                                className={`w-full py-2 rounded-lg border border-yellow-700 text-yellow-400 text-sm transition-all ${hintLoading ? "opacity-50 cursor-not-allowed" : "hover:bg-yellow-900/30"}`}
+                                className={`w-full py-2 rounded-lg border border-yellow-700 text-yellow-400 text-sm transition-all ${
+                                    hintLoading ? "opacity-50 cursor-not-allowed" : "hover:bg-yellow-900/30"
+                                }`}
                             >
                                 {hintLoading
                                     ? "힌트 생성 중..."
@@ -384,7 +396,6 @@ export default function ProblemPage() {
                         )}
                     </div>
 
-                    {/* 테스트 결과 */}
                     {/* 테스트 결과 */}
                     {testResult && (
                         <div className="mt-6">
@@ -419,7 +430,7 @@ export default function ProblemPage() {
                                     <div className="bg-gray-800 divide-y divide-gray-700">
                                         <div className="flex text-xs">
                                             <div className="w-24 px-3 py-2 text-gray-500 bg-gray-900 font-medium">
-                                                기대 출력
+                                                예상 출력
                                             </div>
                                             <div className="flex-1 px-3 py-2 text-blue-300 font-mono">{r.expected}</div>
                                         </div>
@@ -452,15 +463,15 @@ export default function ProblemPage() {
                     <button
                         onClick={handleRun}
                         disabled={pyodideLoading || running}
-                        className={`mt-4 py-3 rounded-xl font-semibold transition-all
-                ${
-                    pyodideLoading || running
-                        ? "bg-gray-700 text-gray-400 cursor-not-allowed"
-                        : "bg-indigo-600 text-white hover:bg-indigo-700"
-                }`}
+                        className={`mt-4 py-3 rounded-xl font-semibold transition-all ${
+                            pyodideLoading || running
+                                ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+                                : "bg-indigo-600 text-white hover:bg-indigo-700"
+                        }`}
                     >
                         {running ? "실행 중..." : "▶ 코드 실행"}
                     </button>
+
                     {/* 게이트 통과 후 제출 버튼 활성화 */}
                     {gateToken && (
                         <button

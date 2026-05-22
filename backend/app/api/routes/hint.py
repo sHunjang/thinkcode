@@ -49,7 +49,7 @@ async def generate_hint(
     
     # DB에서 문제 정보 조회
     result = await db.execute(
-        text("SELECT title, description, concept_tag FROM problems WHERE id = :id"),
+        text("SELECT title, description, concept_tag, starter_code FROM problems WHERE id = :id"),
         {"id": request.problem_id}
     )
     problem = result.fetchone()
@@ -63,57 +63,62 @@ async def generate_hint(
     # 힌트 단계별 구체성 조절
     # 단계가 높을수록 더 직접적인 힌트
     hint_level_desc = {
-        1: "Very abstract hint. Only suggest the direction, never mention specific details.",
-        2: "Intermediate hint. You may mention the concept or method to use, but never show code.",
-        3: "Specific hint. You may tell what function or syntax to use, but never show complete code.",
+        1: "Very abstract hint. Only point out which line needs work and suggest direction. Never mention specific methods.",
+        2: "Intermediate hint. Point out the problematic line and mention what concept or approach to use, but never show code.",
+        3: "Specific hint. Point out the line and tell what function or syntax to use, but never show complete code.",
     }
 
-    # Claude API 호출 - 소크라테스식 힌트 생성
     message = client.messages.create(
         model="claude-sonnet-4-6",
         max_tokens=1000,
         system="""You are a friendly Python coding tutor.
-Help learners solve problems through Socratic questioning.
-Never reveal the answer or show complete code directly.
-Format responses with emoji headers for readability.
-Always respond in Korean. Keep responses concise and structured.""",
+    Help learners solve problems through Socratic questioning.
+    Never reveal the answer or show complete code directly.
+    Always respond in Korean. Keep responses concise and structured.
+    Output plain text only. Never use markdown formatting like **bold** or ## headers.""",
         messages=[
-    {
-        "role": "user",
-        "content": f"""Provide a hint for the following problem.
+            {
+                "role": "user",
+                "content": f"""Provide a hint for the following problem.
 
-[Problem Information]
-Title: {problem_data['title']}
-Description: {problem_data['description']}
-Concept: {problem_data['concept_tag']}
+    [Problem Information]
+    Title: {problem_data['title']}
+    Description: {problem_data['description']}
+    Concept: {problem_data['concept_tag']}
 
-[Learner's Current Code]
-```python
-{request.current_code}
-```
+    [Starter Code - This is given to learner, do NOT analyze or comment on this part]
+    ```python
+    {problem_data['starter_code']}
+    ```
 
-[Hint Step]
-Step {request.hint_step}: {hint_level_desc[request.hint_step]}
+    [Learner's Current Code - Analyze only the lines the learner wrote AFTER the starter code]
+    ```python
+    {request.current_code}
+    ```
 
-Format your response EXACTLY like this:
+    [Hint Step]
+    Step {request.hint_step}: {hint_level_desc[request.hint_step]}
 
-🔍 **코드 분석**
-Line {{line_number}}: {{what is wrong or missing}}
-(If code is empty, write "아직 코드를 작성하지 않으셨네요!")
+    Format your response EXACTLY like this (plain text, no markdown):
 
-💡 **핵심 포인트**
-(1-2 sentences pointing out what to focus on)
+    📍 코드 분석
+    줄 {{번호}}: {{해당 줄에서 무엇이 부족하거나 개선이 필요한지}}
+    (학습자가 작성한 코드가 starter_code와 동일하거나 비어있으면 "아직 풀이 코드를 작성하지 않으셨네요!" 라고만 작성)
 
-🤔 **생각해보세요**
-(1 specific Socratic question to guide thinking)
+    💡 핵심 힌트
+    (1줄로 핵심 방향만 제시)
 
-Rules:
-- Never reveal the answer or show complete code
-- Keep response concise and under 150 words in Korean
-- Line numbers must match the actual code lines
-- If no specific line issue, skip the Line part"""
-    }
-]
+    🤔 생각해보세요
+    (1가지 소크라테스식 질문)
+
+    Rules:
+    - Never reveal the answer or show complete code
+    - Keep response concise and under 150 words in Korean
+    - Analyze ONLY the lines learner wrote, not the starter code
+    - No markdown formatting (no **, no ##, no backticks)
+    - Plain text only"""
+            }
+        ]
     )
 
     hint_text = next(
